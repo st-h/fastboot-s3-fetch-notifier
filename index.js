@@ -28,8 +28,8 @@ class S3Notifier {
 
     return this.getCurrentLastModified()
       .then(() => this.schedulePoll())
-      .catch(() => {
-        this.ui.writeError('error fetching S3 last modified; notifications disabled');
+      .catch((error) => {
+        this.ui.writeError('error fetching S3 last modified; notifications disabled\n' + JSON.stringify(error);
       });
   }
 
