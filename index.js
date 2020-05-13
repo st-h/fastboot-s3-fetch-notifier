@@ -1,43 +1,48 @@
 "use strict";
 
-const AWS  = require('aws-sdk');
+const fetch = require('node-fetch');
 
 const DEFAULT_POLL_TIME = 3 * 1000;
 
 class S3Notifier {
+
+  pollTime;
+
+  host;
+  bucket;
+  key;
+
+  lastModified;
+
   constructor(options) {
     this.ui = options.ui;
-    this.bucket = options.bucket;
-    this.key = options.key;
     this.pollTime = options.poll || DEFAULT_POLL_TIME;
 
-    this.params = {
-      Bucket: this.bucket,
-      Key: this.key
-    };
-
-    this.s3 = new AWS.S3({
-      apiVersion: '2006-03-01',
-      signatureVersion: 'v4',
-      region: options.region
-    });
+    this.host = options.host;
+    this.bucket = options.bucket;
+    this.key = options.key;
   }
 
   subscribe(notify) {
     this.notify = notify;
 
-    return this.getCurrentLastModified()
+    return this.getLastModified()
+      .then((date) => {
+        this.lastModified = date;
+      })
       .then(() => this.schedulePoll())
       .catch((error) => {
         this.ui.writeError('error fetching S3 last modified; notifications disabled: ' + error);
       });
   }
 
-  getCurrentLastModified() {
-    return this.s3.headObject(this.params).promise()
-      .then(data => {
-        this.lastModified = data.LastModified;
-      });
+  getLastModified() {
+    return fetch(`https://${this.host}/${this.bucket}/${this.key}`).then((response => {
+      if (!response.ok) {
+        throw response;
+      }
+      return new Date(response.headers.get('Last-Modified'));
+    }));
   }
 
   schedulePoll() {
@@ -47,9 +52,9 @@ class S3Notifier {
   }
 
   poll() {
-    this.s3.headObject(this.params).promise()
-      .then(data => {
-        this.compareLastModifieds(data.LastModified);
+    this.getLastModified()
+      .then((date) => {
+        this.compareLastModifieds(date);
         this.schedulePoll();
       })
       .catch(() => {

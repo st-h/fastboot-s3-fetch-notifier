@@ -1,20 +1,22 @@
-## FastBoot S3 Notifier
+## FastBoot S3 Fetch Notifier
 
 This notifier for the [FastBoot App Server][app-server] works with AWS
 S3 to poll an object's Last Modified header to detect when you have
-deployed a new version of your app.
+deployed a new version of your app. This notifier is a fork of
+[fastboot-s3-notifier](https://github.com/tomdale/fastboot-s3-notifier),
+that makes use of node-fetch instead of the s3 client.
 
 [app-server]: https://github.com/ember-fastboot/fastboot-app-server
 
-To use the notifier, configure it with an S3 bucket and key:
+To use the notifier, configure it with an S3 host, bucket and key:
 
 ```js
 const S3Notifier = require('fastboot-s3-notifier');
 
 let notifier = new S3Notifier({
-  bucket: S3_BUCKET,
-  key: S3_KEY,
-  region: AWS_REGION // optional
+  host: "s3.eu-central-1.amazonaws.com",
+  bucket: "bucketname",
+  key: "path/to/fastboot-deploy-info.json",
 });
 
 let server = new FastBootAppServer({
